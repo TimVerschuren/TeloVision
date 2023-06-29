@@ -105,6 +105,7 @@ class findTelomeres:
         gc_data = []
         repeat = []
         repeat_sequence = []
+        telo_class = []
 
         for key, value in self.fasta.items():
             telo_bin = []
@@ -127,15 +128,19 @@ class findTelomeres:
             if len(five_prime[0]) >= rep_len and self.calculate_gc(five_prime[0]) > 0.2:
                 telo_bin.append(1)
                 telomeres[key] = telo_bin
+                telo_class.append("Y")
             if len(five_prime[0]) < rep_len or self.calculate_gc(five_prime[0]) < 0.2:
                 telo_bin.append(0)
                 telomeres[key] = telo_bin
+                telo_class.append("N")
             if len(three_prime[0]) >= rep_len and self.calculate_gc(three_prime[0]) > 0.2:
                 telo_bin.append(1)
                 telomeres[key] = telo_bin
+                telo_class.append("Y")
             if len(three_prime[0]) < rep_len or self.calculate_gc(three_prime[0]) < 0.2:
                 telo_bin.append(0)
                 telomeres[key] = telo_bin
+                telo_class.append("N")
 
         for value in telomeres.values():
             telo_pos.append(value)
@@ -143,7 +148,8 @@ class findTelomeres:
         telo_data = pd.DataFrame(data={"Repeat": repeat, 
                                 "Length": len_data, 
                                 "GC%": gc_data, 
-                                "Repetitive Sequence": repeat_sequence}, 
+                                "Repetitive Sequence": repeat_sequence,
+                                "Telomere": telo_class}, 
                                 index=scaf_data)
         telo_data.to_csv(f"{self.output}_info.tsv", sep="\t")
 
