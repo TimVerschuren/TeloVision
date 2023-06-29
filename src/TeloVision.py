@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-TeloVision is a Python package 
+TeloVision is a Python package which determines the presence of telomeres and visualises scaffolds in genome assemblies.
 """
 
 """Import Statements"""
