@@ -14,8 +14,8 @@ __author__ = "Tim Verschuren"
 __credits__ = ["Tim Verschuren", "Jérôme Collemare"]
 
 __licence__ = "MIT"
-__date__ = "29-06-2023"
-__version__ = "1.0"
+__date__ = "03-07-2023"
+__version__ = "1.0.1"
 __maintainer__ = "Tim Verschuren"
 __email__ = "t.verschuren@wi.knaw.nl"
 __status__ = "Development"
@@ -50,14 +50,11 @@ class findTelomeres:
                 if seq_slice[i:i+k] == seq_slice[i+k:i+2*k] or \
                     seq_slice[i:i+k] == seq_slice[i+k+1:i+2*k+1]:
                     j = i
-                    repeat_count = 1
                     while True:
                         if seq_slice[j:j+k] == seq_slice[j+k:j+2*k]:
-                            repeat_count += 1
                             j += k
                         else:
                             if seq_slice[j:j+k] == seq_slice[j+k+1:j+2*k+1]:
-                                repeat_count += 1
                                 j += k+1
                             else:
                                 if seq_slice[i:i+k] in kmer_dict:
@@ -99,7 +96,6 @@ class findTelomeres:
         telo_pos = []
         scaffolds = []
         lengths = []
-
         scaf_data = []
         len_data = []
         gc_data = []
@@ -114,16 +110,29 @@ class findTelomeres:
             five_prime = self.identify_repeats(value[:seq_size])
             three_prime = self.identify_repeats(value[-seq_size:])
 
+            # Gather data for repeat info file
             scaf_data.append(f"{key}_5'")
             scaf_data.append(f"{key}_3'")
             repeat.append(five_prime[1])
             repeat.append(three_prime[1])
-            len_data.append(len(five_prime[0]))
-            len_data.append(len(three_prime[0]))
-            gc_data.append(self.calculate_gc(five_prime[0]))
-            gc_data.append(self.calculate_gc(three_prime[0]))
-            repeat_sequence.append(five_prime[0])
-            repeat_sequence.append(three_prime[0])
+
+            if five_prime[0] == "NA":
+                len_data.append("NA")
+            else:
+                len_data.append(len(five_prime[0]))
+            if three_prime[0] == "NA":
+                len_data.append("NA")
+            else:
+                len_data.append(len(three_prime[0]))
+
+            if five_prime[0] == "NA":
+                gc_data.append("NA")
+            else:
+                gc_data.append(self.calculate_gc(five_prime[0]))
+            if three_prime[0] == "NA":
+                gc_data.append("NA")
+            else:
+                gc_data.append(self.calculate_gc(three_prime[0]))
 
             if len(five_prime[0]) >= rep_len and self.calculate_gc(five_prime[0]) > 0.2:
                 telo_bin.append(1)
@@ -141,6 +150,9 @@ class findTelomeres:
                 telo_bin.append(0)
                 telomeres[key] = telo_bin
                 telo_class.append("N")
+
+            repeat_sequence.append(five_prime[0])
+            repeat_sequence.append(three_prime[0])
 
         for value in telomeres.values():
             telo_pos.append(value)
