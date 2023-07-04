@@ -15,7 +15,7 @@ __credits__ = ["Tim Verschuren", "Jérôme Collemare"]
 
 __licence__ = "MIT"
 __date__ = "04-07-2023"
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 __maintainer__ = "Tim Verschuren"
 __email__ = "t.verschuren@wi.knaw.nl"
 __status__ = "Development"
