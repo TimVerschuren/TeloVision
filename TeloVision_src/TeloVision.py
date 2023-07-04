@@ -158,10 +158,11 @@ class findTelomeres:
             telo_pos.append(value)
 
         telo_data = pd.DataFrame(data={"Repeat": repeat, 
-                                "Length": len_data, 
+                                "Length": len_data,
                                 "GC%": gc_data, 
-                                "Repetitive Sequence": repeat_sequence,
-                                "Telomere": telo_class}, 
+                                "Telomere": telo_class,
+                                "Repetitive Sequence": repeat_sequence
+                                }, 
                                 index=scaf_data)
         telo_data.to_csv(f"{self.output}_info.tsv", sep="\t")
 
