@@ -2,6 +2,9 @@
 
 """
 TeloVision is a Python package which determines the presence of telomeres and visualises scaffolds in genome assemblies.
+
+usage: telovision [-h] -i INPUT -o OUTPUT [-k KMER_SIZE] [-r MIN_REPEAT_LENGTH] [-s SEQUENCE_SIZE]
+
 """
 
 """Import Statements"""
@@ -14,8 +17,8 @@ __author__ = "Tim Verschuren"
 __credits__ = ["Tim Verschuren", "Jérôme Collemare"]
 
 __licence__ = "MIT"
-__date__ = "04-07-2023"
-__version__ = "0.1.0"
+__date__ = "05-07-2023"
+__version__ = "0.1.1"
 __maintainer__ = "Tim Verschuren"
 __email__ = "t.verschuren@wi.knaw.nl"
 __status__ = "Development"
@@ -268,6 +271,6 @@ def read_fasta(fasta_file) -> dict:
     """
     fasta_dict = {}
     for record in SeqIO.parse(fasta_file, "fasta"):
-        fasta_dict[record.id] = record.seq
+        fasta_dict[record.id] = (record.seq).upper()
 
     return fasta_dict
