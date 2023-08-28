@@ -10,7 +10,6 @@ usage: telovision [-h] -i INPUT -o OUTPUT [-k KMER_SIZE] [-r MIN_REPEAT_LENGTH]
 """
 
 """Import Statements"""
-from collections import OrderedDict
 import pandas as pd
 from Bio import SeqIO
 import plotly.express as px
