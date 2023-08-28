@@ -8,7 +8,8 @@ setuptools.setup(
     version="v0.1.1",
     author="Tim Verschuren",
     author_email="t.verschuren@wi.knaw.nl",
-    description="TeloVision is a python package that determines the presence of telomeres at the ends of scaffolds and generates a visualisation.",
+    description="TeloVision is a python package that determines the presence \
+        of telomeres at the ends of scaffolds and generates a visualisation.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/TimVerschuren/TeloVision",
