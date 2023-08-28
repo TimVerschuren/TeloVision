@@ -33,7 +33,7 @@ def main():
                            ends of the sequence for analysis. (default: 200)")
     argParser.add_argument("--sorted",
                            action="store_true",
-                           help="")
+                           help="Sorts the scaffolds by size if selected.")
     
     args = argParser.parse_args()
     if not args.kmer_size:
