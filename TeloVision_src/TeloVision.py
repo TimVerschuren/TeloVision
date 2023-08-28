@@ -5,7 +5,7 @@ TeloVision is a Python package which determines the presence of telomeres
 and visualises scaffolds in genome assemblies.
 
 usage: telovision [-h] -i INPUT -o OUTPUT [-k KMER_SIZE] [-r MIN_REPEAT_LENGTH]
- [-s SEQUENCE_SIZE]
+ [-s SEQUENCE_SIZE] [--sorted]
 
 """
 
