@@ -2,14 +2,34 @@ import argparse
 from .TeloVision import *
 
 def main():
-    argParser = argparse.ArgumentParser(description="TeloVision - Determine and visualise the presence of telomeres.\
-                                        For more information see: https://github.com/TimVerschuren/TeloVision")
-    argParser.add_argument("-i", "--input", type=str, help="Location of fasta file", required=True)
-    argParser.add_argument("-o", "--output", type=str, help="Name of output file", required=True)
-    argParser.add_argument("-k", "--kmer_size", type=int, help="Size of k-mer sliding window. (default: 5000)")
-    argParser.add_argument("-r", "--min_repeat_length", type=int, help="Minimum length for a repetitive \
+    argParser = argparse.ArgumentParser(description="TeloVision - Determine \
+                                and visualise the presence of telomeres. \
+                                For more information see: \
+                                https://github.com/TimVerschuren/TeloVision")
+    argParser.add_argument("-i", 
+                           "--input", 
+                           type=str, 
+                           help="Location of fasta file", 
+                           required=True)
+    argParser.add_argument("-o", 
+                           "--output", 
+                           type=str, 
+                           help="Name of output file", 
+                           required=True)
+    argParser.add_argument("-k", 
+                           "--kmer_size", 
+                           type=int, 
+                           help="Size of k-mer sliding window. \
+                            (default: 5000)")
+    argParser.add_argument("-r", 
+                           "--min_repeat_length", 
+                           type=int, 
+                           help="Minimum length for a repetitive \
                            region to be counted as a telomere. (default: 30)")
-    argParser.add_argument("-s", "--sequence_size", type=int, help="Size of sequence taken from the 5' and 3' \
+    argParser.add_argument("-s", 
+                           "--sequence_size", 
+                           type=int, 
+                           help="Size of sequence taken from the 5' and 3' \
                            ends of the sequence for analysis. (default: 200)")
     
     args = argParser.parse_args()
@@ -26,7 +46,8 @@ def main():
                 args.output
                 ).gc_content(args.kmer_size)
     
-    print(f"Figure saved as {args.output}.html. Repeat data saved as {args.output}_info.tsv. Thank you for using TeloVision!\n")
+    print(f"Figure saved as {args.output}.html. Repeat data saved as \
+          {args.output}_info.tsv. Thank you for using TeloVision!\n")
 
 if __name__ == "__main__":
     main()
