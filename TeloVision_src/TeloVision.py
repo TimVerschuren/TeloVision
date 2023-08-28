@@ -20,7 +20,7 @@ __credits__ = ["Tim Verschuren", "Jérôme Collemare"]
 
 __licence__ = "MIT"
 __date__ = "28-08-2023"
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 __maintainer__ = "Tim Verschuren"
 __email__ = "t.verschuren@wi.knaw.nl"
 __status__ = "Development"
@@ -32,11 +32,15 @@ class findTelomeres:
     Attributes:
         fasta_file (str): Path to fasta file.
         output (str): Name of output file.
+        sort (bool): True if scaffolds should be sorted by size.
     """
-    def __init__(self, fasta_file: str, output: str):
-        self.fasta = dict(sorted(read_fasta(fasta_file).items(), 
-                                 key=lambda item: len(item[1]), 
-                                 reverse=True))
+    def __init__(self, fasta_file: str, output: str, sort=False):
+        if sort == True:
+            self.fasta = dict(sorted(read_fasta(fasta_file).items(), 
+                                    key=lambda item: len(item[1]), 
+                                    reverse=True))
+        else:
+            self.fasta = read_fasta(fasta_file)
         self.output = output
 
     def identify_repeats(self, seq_slice: str) -> int:
@@ -219,11 +223,16 @@ class visualiseGC:
         telo_df (pd.Dataframe): Dataframe containing the name, length
         and presence of telomeres for each scaffold.
         output (str): Name of output file.
+        sort (bool): True if scaffolds should be sorted by size.
     """
-    def __init__(self, fasta_file: str, telo_df: pd.DataFrame, output: str):
-        self.fasta = dict(sorted(read_fasta(fasta_file).items(), 
-                                 key=lambda item: len(item[1]), 
-                                 reverse=True))
+    def __init__(self, fasta_file: str, telo_df: pd.DataFrame, 
+                 output: str, sort=False):
+        if sort == True:
+            self.fasta = dict(sorted(read_fasta(fasta_file).items(), 
+                                    key=lambda item: len(item[1]), 
+                                    reverse=True))
+        else:
+            self.fasta = read_fasta(fasta_file)
         self.scaffolds = []
         self.GC_cont = []
         self.length_list = []
