@@ -22,7 +22,7 @@ pip install .
 
 TeloVision has 2 required inputs and 3 optional ones. An input and output file are required, while the k-mer size, minimum repeat length and sequence size can be altered if the user wishes so. If the optional inputs are not selected, default values will be used. 
 ```
-usage: telovision [-h] -i INPUT -o OUTPUT [-k KMER_SIZE] [-r MIN_REPEAT_LENGTH] [-s SEQUENCE_SIZE]
+usage: telovision [-h] -i INPUT -o OUTPUT [-k KMER_SIZE] [-r MIN_REPEAT_LENGTH] [-s SEQUENCE_SIZE] [--sorted]
 
 TeloVision - Determine and visualise the presence of telomeres. For more information see: https://github.com/TimVerschuren/TeloVision
 
