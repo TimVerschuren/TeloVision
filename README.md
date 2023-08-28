@@ -38,4 +38,5 @@ options:
                         Minimum length for a repetitive region to be counted as a telomere. (default: 30)
   -s SEQUENCE_SIZE, --sequence_size SEQUENCE_SIZE
                         Size of sequence taken from the 5' and 3' ends of the sequence for analysis. (default: 200)
+  --sorted              Sorts the scaffolds by size if selected.
 ```
