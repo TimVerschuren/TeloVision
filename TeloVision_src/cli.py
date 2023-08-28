@@ -31,6 +31,9 @@ def main():
                            type=int, 
                            help="Size of sequence taken from the 5' and 3' \
                            ends of the sequence for analysis. (default: 200)")
+    argParser.add_argument("--sorted",
+                           action="store_true",
+                           help="")
     
     args = argParser.parse_args()
     if not args.kmer_size:
@@ -39,15 +42,17 @@ def main():
         args.min_repeat_length = 30
     if not args.sequence_size:
         args.sequence_size = 200
+    if not args.sorted:
+        args.sorted = False
     
     visualiseGC(args.input, 
-            findTelomeres(args.input, args.output)\
+            findTelomeres(args.input, args.output, args.sorted)\
                 .telomere_position(args.min_repeat_length, args.sequence_size),
-                args.output
+                args.output, args.sorted
                 ).gc_content(args.kmer_size)
     
     print(f"Figure saved as {args.output}.html. Repeat data saved as \
-          {args.output}_info.tsv. Thank you for using TeloVision!\n")
+{args.output}_info.tsv. Thank you for using TeloVision!\n")
 
 if __name__ == "__main__":
     main()
