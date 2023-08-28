@@ -1,13 +1,16 @@
 #!/usr/bin/env python
 
 """
-TeloVision is a Python package which determines the presence of telomeres and visualises scaffolds in genome assemblies.
+TeloVision is a Python package which determines the presence of telomeres 
+and visualises scaffolds in genome assemblies.
 
-usage: telovision [-h] -i INPUT -o OUTPUT [-k KMER_SIZE] [-r MIN_REPEAT_LENGTH] [-s SEQUENCE_SIZE]
+usage: telovision [-h] -i INPUT -o OUTPUT [-k KMER_SIZE] [-r MIN_REPEAT_LENGTH]
+ [-s SEQUENCE_SIZE]
 
 """
 
 """Import Statements"""
+from collections import OrderedDict
 import pandas as pd
 from Bio import SeqIO
 import plotly.express as px
@@ -17,8 +20,8 @@ __author__ = "Tim Verschuren"
 __credits__ = ["Tim Verschuren", "Jérôme Collemare"]
 
 __licence__ = "MIT"
-__date__ = "05-07-2023"
-__version__ = "0.1.1"
+__date__ = "28-08-2023"
+__version__ = "0.2.0"
 __maintainer__ = "Tim Verschuren"
 __email__ = "t.verschuren@wi.knaw.nl"
 __status__ = "Development"
@@ -32,7 +35,9 @@ class findTelomeres:
         output (str): Name of output file.
     """
     def __init__(self, fasta_file: str, output: str):
-        self.fasta = read_fasta(fasta_file)
+        self.fasta = dict(sorted(read_fasta(fasta_file).items(), 
+                                 key=lambda item: len(item[1]), 
+                                 reverse=True))
         self.output = output
 
     def identify_repeats(self, seq_slice: str) -> int:
@@ -50,27 +55,36 @@ class findTelomeres:
         kmer_dict = {}
         for k in range(6,10):
             for i in range(0, len(seq_slice) - k + 1):
+                # If a match is found, initialize k-mer repeat search.
                 if seq_slice[i:i+k] == seq_slice[i+k:i+2*k] or \
                     seq_slice[i:i+k] == seq_slice[i+k+1:i+2*k+1]:
                     j = i
                     while True:
+                        # If a match is found, move over to the next k-mer.
                         if seq_slice[j:j+k] == seq_slice[j+k:j+2*k]:
                             j += k
                         else:
                             if seq_slice[j:j+k] == seq_slice[j+k+1:j+2*k+1]:
                                 j += k+1
+                            # If no more matches are found, check if the 
+                            # current repeat is larger than any previous ones.
                             else:
                                 if seq_slice[i:i+k] in kmer_dict:
-                                    if len(kmer_dict[seq_slice[i:i+k]]) - len(seq_slice[i:j+k]) < 0:
-                                        kmer_dict[str(seq_slice[i:i+k])] = str(seq_slice[i:j+k])
+                                    if len(kmer_dict[seq_slice[i:i+k]]) \
+                                        - len(seq_slice[i:j+k]) < 0:
+                                        kmer_dict[str(seq_slice[i:i+k])] \
+                                            = str(seq_slice[i:j+k])
                                 else:
-                                    kmer_dict[str(seq_slice[i:i+k])] = str(seq_slice[i:j+k])
+                                    kmer_dict[str(seq_slice[i:i+k])] = \
+                                        str(seq_slice[i:j+k])
                                 break
         
+        # Retrieve length of found repeats from dictionary
         seq_len = [len(seq) for seq in list(kmer_dict.values())]
         if len(seq_len) == 0:
             repeat_sequence = "NA"
             repeat = "NA"
+        # Retrieve full sequence containing repeat and the repeating sequence.
         else:
             position = seq_len.index(max(seq_len))
             repeat_sequence = list(kmer_dict.values())[position]
@@ -91,7 +105,7 @@ class findTelomeres:
         Returns:
             df (pd.Dataframe): Dataframe containing the name, length
             and presence of telomeres for each scaffold.
-        
+
         Yields:
             A tsv file containing information about the repeats.
         """
@@ -107,13 +121,14 @@ class findTelomeres:
         telo_class = []
 
         for key, value in self.fasta.items():
+            # Initialize identify repeats for 5' and 3' regions.
             telo_bin = []
             scaffolds.append(key)
             lengths.append(len(value))
             five_prime = self.identify_repeats(value[:seq_size])
             three_prime = self.identify_repeats(value[-seq_size:])
 
-            # Gather data for repeat info file
+            # Gather repeat length and GC-content data for repeat info file.
             scaf_data.append(f"{key}_5'")
             scaf_data.append(f"{key}_3'")
             repeat.append(five_prime[1])
@@ -137,29 +152,39 @@ class findTelomeres:
             else:
                 gc_data.append(self.calculate_gc(three_prime[0]))
 
-            if len(five_prime[0]) >= rep_len and self.calculate_gc(five_prime[0]) > 0.2:
+            # Determine if a repeat is telomeric based on the GC-content of
+            # the repeat.
+            if len(five_prime[0]) >= rep_len and \
+                self.calculate_gc(five_prime[0]) > 0.2:
                 telo_bin.append(1)
                 telomeres[key] = telo_bin
                 telo_class.append("Y")
-            if len(five_prime[0]) < rep_len or self.calculate_gc(five_prime[0]) < 0.2:
+            if len(five_prime[0]) < rep_len or \
+                self.calculate_gc(five_prime[0]) < 0.2:
                 telo_bin.append(0)
                 telomeres[key] = telo_bin
                 telo_class.append("N")
-            if len(three_prime[0]) >= rep_len and self.calculate_gc(three_prime[0]) > 0.2:
+            if len(three_prime[0]) >= rep_len and \
+                self.calculate_gc(three_prime[0]) > 0.2:
                 telo_bin.append(1)
                 telomeres[key] = telo_bin
                 telo_class.append("Y")
-            if len(three_prime[0]) < rep_len or self.calculate_gc(three_prime[0]) < 0.2:
+            if len(three_prime[0]) < rep_len or \
+                self.calculate_gc(three_prime[0]) < 0.2:
                 telo_bin.append(0)
                 telomeres[key] = telo_bin
                 telo_class.append("N")
 
+            # Save repeating sequence.
             repeat_sequence.append(five_prime[0])
             repeat_sequence.append(three_prime[0])
 
+        # Save telomere position data
         for value in telomeres.values():
             telo_pos.append(value)
 
+        # Create a DataFrame containing information about the repeats and
+        # output as a .tsv file.
         telo_data = pd.DataFrame(data={"Repeat": repeat, 
                                 "Length": len_data,
                                 "GC%": gc_data, 
@@ -169,7 +194,10 @@ class findTelomeres:
                                 index=scaf_data)
         telo_data.to_csv(f"{self.output}_info.tsv", sep="\t")
 
-        df = pd.DataFrame(data={'Scaffolds': scaffolds, 'Lengths': lengths, 'Telomeres': telo_pos})
+        # Save scaffold data as DataFrame for visualization.
+        df = pd.DataFrame(data={'Scaffolds': scaffolds, 
+                                'Lengths': lengths, 
+                                'Telomeres': telo_pos})
         return df
 
     def calculate_gc(self, sequence: str) -> int:
@@ -194,7 +222,9 @@ class visualiseGC:
         output (str): Name of output file.
     """
     def __init__(self, fasta_file: str, telo_df: pd.DataFrame, output: str):
-        self.fasta = read_fasta(fasta_file)
+        self.fasta = dict(sorted(read_fasta(fasta_file).items(), 
+                                 key=lambda item: len(item[1]), 
+                                 reverse=True))
         self.scaffolds = []
         self.GC_cont = []
         self.length_list = []
@@ -215,33 +245,43 @@ class visualiseGC:
             px.bar: html file of plotly bar plot.
         """
         for key, value in self.fasta.items():
-            if list(self.telo_df.loc[self.telo_df["Scaffolds"] == key]["Telomeres"])[0][0] == 1:
+            # Check if a telomeres are present on the scaffolds 5' end.
+            if list(self.telo_df.loc[self.telo_df["Scaffolds"] \
+                                     == key]["Telomeres"])[0][0] == 1:
                 self.GC_cont.append(0)
                 self.scaffolds.append(key)
+                # Create a black bar for the telomere
                 self.length_list.append(self.telo_df["Lengths"].max()*1e-6/75)
             else:
                 self.GC_cont.append(100)
                 self.scaffolds.append(key)
+                # Create a white bar if no telomere is present.
                 self.length_list.append(self.telo_df["Lengths"].max()*1e-6/75)
 
+            # Iterate over scaffold k-mer wise and calculate the GC-content for
+            # each k-mer. 
             for i in range(0, len(value)-k+1, k):
                 self.GC_cont.append((value[i:i+k].count('C') + \
                                      value[i:i+k].count('G'))/k*100)
                 self.scaffolds.append(key)
                 self.length_list.append(k/1e6)
-            
-            if list(self.telo_df.loc[self.telo_df["Scaffolds"] == key]["Telomeres"])[0][1] == 1:
+            # Check if a telomeres are present on the scaffolds 3' end.
+            if list(self.telo_df.loc[self.telo_df["Scaffolds"] == \
+                                     key]["Telomeres"])[0][1] == 1:
                 self.GC_cont.append(0)
                 self.scaffolds.append(key)
+                # Create a black bar for the telomere
                 self.length_list.append(self.telo_df["Lengths"].max()*1e-6/75)
             else:
                 self.GC_cont.append(100)
                 self.scaffolds.append(key)
+                # Create a white bar if no telomere is present.
                 self.length_list.append(self.telo_df["Lengths"].max()*1e-6/75)
 
         fig_df = pd.DataFrame(data={"Scaffolds": self.scaffolds, 
                                     "Length": self.length_list, 
                                     "GC%": self.GC_cont})
+        # Create figure
         fig = px.bar(fig_df, 
                      x="Scaffolds", 
                      y = "Length", 
