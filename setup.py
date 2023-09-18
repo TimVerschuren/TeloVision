@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fhand:
 
 setuptools.setup(
     name="TeloVision",
-    version="v0.2.1",
+    version="v0.3.0",
     author="Tim Verschuren",
     author_email="t.verschuren@wi.knaw.nl",
     description="TeloVision is a python package that determines the presence \
@@ -21,12 +21,12 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires=["pandas", "Bio", "plotly"],
+    install_requires=["pandas", "Bio", "plotly", "python-levenshtein"],
     packages=setuptools.find_packages(),
     python_requires=">=3.10",
     entry_points={
         "console_scripts": [
-            "telovision = TeloVision_src.cli:main",
+            "telovision = src.cli:main",
         ]
     }
 )
