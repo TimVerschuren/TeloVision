@@ -31,6 +31,11 @@ def main():
                            type=int, 
                            help="Size of sequence taken from the 5' and 3' \
                            ends of the sequence for analysis. (default: 200)")
+    argParser.add_argument("-g",
+                           "--gap_size",
+                           type=int,
+                           help="Size of gaps allowed within telomeric \
+                            repeats. (default: length of detected repeat)")
     argParser.add_argument("--sorted",
                            action="store_true",
                            help="Sorts the scaffolds by size if selected.")
@@ -42,12 +47,16 @@ def main():
         args.min_repeat_length = 30
     if not args.sequence_size:
         args.sequence_size = 200
+    if not args.gap_size:
+        args.gap_size= False
     if not args.sorted:
         args.sorted = False
     
     visualiseGC(args.input, 
             findTelomeres(args.input, args.output, args.sorted)\
-                .telomere_position(args.min_repeat_length, args.sequence_size),
+                .telomere_position(args.min_repeat_length, 
+                                   args.sequence_size,
+                                   args.gap_size),
                 args.output, args.sorted
                 ).gc_content(args.kmer_size)
     
