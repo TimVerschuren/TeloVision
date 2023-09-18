@@ -5,7 +5,7 @@ TeloVision is a Python package which determines the presence of telomeres
 and visualises scaffolds in genome assemblies.
 
 usage: telovision [-h] -i INPUT -o OUTPUT [-k KMER_SIZE] [-r MIN_REPEAT_LENGTH]
- [-s SEQUENCE_SIZE] [--sorted]
+ [-s SEQUENCE_SIZE] [-g GAP_SIZE] [--sorted]
 
 """
 
@@ -13,14 +13,15 @@ usage: telovision [-h] -i INPUT -o OUTPUT [-k KMER_SIZE] [-r MIN_REPEAT_LENGTH]
 import pandas as pd
 from Bio import SeqIO
 import plotly.express as px
+import Levenshtein
 
 """Authorship Information"""
 __author__ = "Tim Verschuren"
 __credits__ = ["Tim Verschuren", "Jérôme Collemare"]
 
 __licence__ = "MIT"
-__date__ = "28-08-2023"
-__version__ = "0.2.1"
+__date__ = "18-09-2023"
+__version__ = "0.3.0"
 __maintainer__ = "Tim Verschuren"
 __email__ = "t.verschuren@wi.knaw.nl"
 __status__ = "Development"
@@ -43,20 +44,26 @@ class findTelomeres:
             self.fasta = read_fasta(fasta_file)
         self.output = output
 
-    def identify_repeats(self, seq_slice: str) -> int:
+    def identify_repeats(self, seq_slice: str, gap: int) -> int:
         """Iterates over nucleotide sequence and uses
         k-mers of various sizes to determine the presence
         of a repeating sequence.
 
         Attributes:
             seq_slice (str): A sub portion of a nucleotide sequence.
+            gap (int): Size of gap allowed within repeating sequence to count
+            as one repeat.
 
         Returns:
             repeat_length (int): The length of the repeating
             sequence, if present.
         """
         kmer_dict = {}
-        for k in range(6,10):
+        repeat_coord = {}
+        rep_qc_dict = {}
+        for k in range(5,25):
+            if gap == False:
+                gap = k
             for i in range(0, len(seq_slice) - k + 1):
                 # If a match is found, initialize k-mer repeat search.
                 if seq_slice[i:i+k] == seq_slice[i+k:i+2*k] or \
@@ -64,24 +71,37 @@ class findTelomeres:
                     j = i
                     while True:
                         # If a match is found, move over to the next k-mer.
-                        if seq_slice[j:j+k] == seq_slice[j+k:j+2*k]:
+                        if nuc_diff(seq_slice[i:i+k], 
+                                    seq_slice[j:j+k]) < 2 or \
+                            nuc_diff(seq_slice[i:i+k], 
+                                     seq_slice[j+1:j+k+1]) < 2:
                             j += k
                         else:
-                            if seq_slice[j:j+k] == seq_slice[j+k+1:j+2*k+1]:
-                                j += k+1
-                            # If no more matches are found, check if the 
-                            # current repeat is larger than any previous ones.
+                            # If the gap between current repeat and previous
+                            # repeat is small enough, connect the two
+                            if seq_slice[i:i+k] in kmer_dict:
+                                if abs(i - repeat_coord[seq_slice[i:i+k]])\
+                                    <= gap:
+                                    kmer_dict[seq_slice[i:i+k]] += \
+                                        seq_slice[
+                                            repeat_coord[seq_slice[i:i+k]]:j
+                                            ]
+                                    repeat_coord[seq_slice[i:i+k]] = j
+                                # If repeats are too distant, save the largest
+                                # one.
+                                elif len(kmer_dict[seq_slice[i:i+k]]) \
+                                    - len(seq_slice[i:j]) < 0:
+                                    kmer_dict[seq_slice[i:i+k]] \
+                                        = seq_slice[i:j]
+                                    repeat_coord[seq_slice[i:i+k]] = j
+                            # If repeat is new, add to repeat dict and save
+                            # its final index.
                             else:
-                                if seq_slice[i:i+k] in kmer_dict:
-                                    if len(kmer_dict[seq_slice[i:i+k]]) \
-                                        - len(seq_slice[i:j+k]) < 0:
-                                        kmer_dict[str(seq_slice[i:i+k])] \
-                                            = str(seq_slice[i:j+k])
-                                else:
-                                    kmer_dict[str(seq_slice[i:i+k])] = \
-                                        str(seq_slice[i:j+k])
-                                break
-        
+                                kmer_dict[seq_slice[i:i+k]] = \
+                                    seq_slice[i:j]
+                                repeat_coord[seq_slice[i:i+k]] = j
+                            break
+
         # Retrieve length of found repeats from dictionary
         seq_len = [len(seq) for seq in list(kmer_dict.values())]
         if len(seq_len) == 0:
@@ -89,12 +109,51 @@ class findTelomeres:
             repeat = "NA"
         # Retrieve full sequence containing repeat and the repeating sequence.
         else:
-            position = seq_len.index(max(seq_len))
-            repeat_sequence = list(kmer_dict.values())[position]
-            repeat = list(kmer_dict.keys())[position]
+            # Extract 2 largest repeats
+            sorted_kmer_dict = dict(list(sorted(kmer_dict.items(), 
+                                            key=lambda item: len(item[1]), 
+                                            reverse=True))[:3])
+
+            # If all keys have the same length, select the longest repeat.
+            top_keys = list(sorted_kmer_dict.keys())
+            if all(len(key) == len(top_keys[0]) for key in top_keys):
+                for key, value in sorted_kmer_dict.items():
+                    rep_qc_dict[key] = len(value)
+
+                # Select position of largest repeat in dictionary.
+                qc_score = [score for score in list(rep_qc_dict.values())]
+                position = qc_score.index(max(qc_score))
+                repeat_sequence = list(sorted_kmer_dict.values())[position]
+                repeat = list(sorted_kmer_dict.keys())[position]                
+            
+            # If not all keys have the same length, determine repeat quality
+            else:
+                diff_keys = {}
+                
+                # If no key selected yet
+                for key, value in sorted_kmer_dict.items():
+                    if len(diff_keys) == 0:
+                        diff_keys[key] = value
+                    else:
+                        # Determine if key of similar length is present
+                        diff_key_len = list(len(key) \
+                                            for key in diff_keys.keys())
+                        if len(key) not in diff_key_len:
+                            diff_keys[key] = value
+                            
+                for key, value in diff_keys.items():
+                    rep_qc_dict[key] = repeat_qc(key, value)
+            
+                # Select position of largest repeat in dictionary.
+                qc_score = [score for score in list(rep_qc_dict.values())]
+                position = qc_score.index(max(qc_score))
+                repeat_sequence = list(diff_keys.values())[position]
+                repeat = list(diff_keys.keys())[position]
+
         return repeat_sequence, repeat
     
-    def telomere_position(self, rep_len=30, seq_size=200) -> pd.DataFrame:
+    def telomere_position(self, rep_len=30, 
+                          seq_size=200, gap=False) -> pd.DataFrame:
         """Loop over the scaffolds of a fasta file and determine
         whether a telomere is present at the beginning and end of
         each scaffold.
@@ -104,6 +163,8 @@ class findTelomeres:
             to qualify as a telomeric repeat.
             seq_size (int): Size of sequence taken from the top
             and bottom of the scaffolds. 
+            gap (int): Size of gap allowed within repeating sequence to count
+            as one repeat. 
 
         Returns:
             df (pd.Dataframe): Dataframe containing the name, length
@@ -128,8 +189,8 @@ class findTelomeres:
             telo_bin = []
             scaffolds.append(key)
             lengths.append(len(value))
-            five_prime = self.identify_repeats(value[:seq_size])
-            three_prime = self.identify_repeats(value[-seq_size:])
+            five_prime = self.identify_repeats(value[:seq_size], gap)
+            three_prime = self.identify_repeats(value[-seq_size:], gap)
 
             # Gather repeat length and GC-content data for repeat info file.
             scaf_data.append(f"{key}_5'")
@@ -303,6 +364,36 @@ class visualiseGC:
         fig.update_yaxes(showgrid=False, title="Physical position (Megabases)")
         fig.write_html(f"{self.output}.html")
 
+
+def nuc_diff(seq1: str, seq2: str) -> int:
+    """Calculate number of different nucleotides between two sequences.
+
+    Attributes:
+    seq1 (str): Nucleotide sequence
+    seq2 (str): Nucleotide sequence
+
+    Returns:
+    nuc_diff (int): Number of different nucleotides. 
+    """
+    if len(seq1) != len(seq2):
+        return len(seq1)
+    else:
+        return sum(seq1[nuc] != seq2[nuc] for nuc in range(len(seq1)))
+
+def repeat_qc(rep: str, seq: str) -> float:
+    """Determine how well a repeat fits the repeating sequence.
+    
+    Attributes:
+        rep (str): Short repeating nucleotide sequence
+        seq (str): Full repeating nucleotide sequence
+    
+    Returns:
+        int: Quality score of repeat, higher is better.
+    """
+    distance = Levenshtein.distance(str(rep)*round(len(seq)/len(rep)), 
+                                    str(seq)) + 1
+
+    return len(seq)/(distance*len(rep))
 
 def read_fasta(fasta_file) -> dict:
     """Read content of fasta file and store data
