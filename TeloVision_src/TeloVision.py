@@ -109,7 +109,7 @@ class findTelomeres:
             repeat = "NA"
         # Retrieve full sequence containing repeat and the repeating sequence.
         else:
-            # Extract 2 largest repeats
+            # Extract 3 largest repeats
             sorted_kmer_dict = dict(list(sorted(kmer_dict.items(), 
                                             key=lambda item: len(item[1]), 
                                             reverse=True))[:3])
