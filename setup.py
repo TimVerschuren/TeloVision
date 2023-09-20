@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fhand:
 
 setuptools.setup(
     name="TeloVision",
-    version="v0.3.1",
+    version="v0.3.2",
     author="Tim Verschuren",
     author_email="t.verschuren@wi.knaw.nl",
     description="TeloVision is a python package that determines the presence \
