@@ -21,7 +21,7 @@ __credits__ = ["Tim Verschuren", "Jérôme Collemare"]
 
 __licence__ = "MIT"
 __date__ = "20-09-2023"
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 __maintainer__ = "Tim Verschuren"
 __email__ = "t.verschuren@wi.knaw.nl"
 __status__ = "Development"
@@ -224,7 +224,7 @@ class findTelomeres:
                 telomeres[key] = telo_bin
                 telo_class.append("Y")
             if len(five_prime[0]) < rep_len or \
-                self.calculate_gc(five_prime[0]) < 0.2:
+                self.calculate_gc(five_prime[0]) <= 0.2:
                 telo_bin.append(0)
                 telomeres[key] = telo_bin
                 telo_class.append("N")
@@ -234,7 +234,7 @@ class findTelomeres:
                 telomeres[key] = telo_bin
                 telo_class.append("Y")
             if len(three_prime[0]) < rep_len or \
-                self.calculate_gc(three_prime[0]) < 0.2:
+                self.calculate_gc(three_prime[0]) <= 0.2:
                 telo_bin.append(0)
                 telomeres[key] = telo_bin
                 telo_class.append("N")
