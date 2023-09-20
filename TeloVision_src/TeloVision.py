@@ -20,8 +20,8 @@ __author__ = "Tim Verschuren"
 __credits__ = ["Tim Verschuren", "Jérôme Collemare"]
 
 __licence__ = "MIT"
-__date__ = "18-09-2023"
-__version__ = "0.3.0"
+__date__ = "20-09-2023"
+__version__ = "0.3.1"
 __maintainer__ = "Tim Verschuren"
 __email__ = "t.verschuren@wi.knaw.nl"
 __status__ = "Development"
@@ -71,9 +71,9 @@ class findTelomeres:
                     j = i
                     while True:
                         # If a match is found, move over to the next k-mer.
-                        if nuc_diff(seq_slice[i:i+k], 
+                        if self.nuc_diff(seq_slice[i:i+k], 
                                     seq_slice[j:j+k]) < 2 or \
-                            nuc_diff(seq_slice[i:i+k], 
+                            self.nuc_diff(seq_slice[i:i+k], 
                                      seq_slice[j+1:j+k+1]) < 2:
                             j += k
                         else:
@@ -109,7 +109,7 @@ class findTelomeres:
             repeat = "NA"
         # Retrieve full sequence containing repeat and the repeating sequence.
         else:
-            # Extract 3 largest repeats
+            # Extract 2 largest repeats
             sorted_kmer_dict = dict(list(sorted(kmer_dict.items(), 
                                             key=lambda item: len(item[1]), 
                                             reverse=True))[:3])
@@ -129,20 +129,20 @@ class findTelomeres:
             # If not all keys have the same length, determine repeat quality
             else:
                 diff_keys = {}
-                
                 # If no key selected yet
                 for key, value in sorted_kmer_dict.items():
+                    rep_key = self.repeat_pattern(key)
                     if len(diff_keys) == 0:
-                        diff_keys[key] = value
+                        diff_keys[rep_key] = value
                     else:
                         # Determine if key of similar length is present
-                        diff_key_len = list(len(key) \
-                                            for key in diff_keys.keys())
-                        if len(key) not in diff_key_len:
-                            diff_keys[key] = value
+                        diff_key_len = list(len(key_) \
+                                            for key_ in diff_keys.keys())
+                        if len(rep_key) not in diff_key_len:
+                            diff_keys[rep_key] = value
                             
                 for key, value in diff_keys.items():
-                    rep_qc_dict[key] = repeat_qc(key, value)
+                    rep_qc_dict[key] = self.repeat_qc(key, value)
             
                 # Select position of largest repeat in dictionary.
                 qc_score = [score for score in list(rep_qc_dict.values())]
@@ -275,6 +275,56 @@ class findTelomeres:
         """
         return (sequence.count("G") + sequence.count("C"))/len(sequence)
 
+    def nuc_diff(self, seq1: str, seq2: str) -> int:
+        """Calculate number of different nucleotides between two sequences.
+
+        Attributes:
+        seq1 (str): Nucleotide sequence
+        seq2 (str): Nucleotide sequence
+
+        Returns:
+        nuc_diff (int): Number of different nucleotides. 
+        """
+        if len(seq1) != len(seq2):
+            return len(seq1)
+        else:
+            return sum(seq1[nuc] != seq2[nuc] for nuc in range(len(seq1)))
+
+    def repeat_qc(self, rep: str, seq: str) -> float:
+        """Determine how well a repeat fits the repeating sequence.
+        
+        Attributes:
+            rep (str): Short repeating nucleotide sequence
+            seq (str): Full repeating nucleotide sequence
+        
+        Returns:
+            int: Quality score of repeat, higher is better.
+        """
+        distance = Levenshtein.distance(str(rep)*round(len(seq)/len(rep)), 
+                                        str(seq)) + 1
+
+        return len(seq)/(distance*len(rep))
+
+    def repeat_pattern(self, rep: str) -> str:
+        """Determine if the detected repeat is miss reported as a larger repeat.
+
+        Attributes:
+            rep(str): Detected repeating nucleotide sequence.
+
+        Returns:
+            str: The pattern within the detected repeat.
+        """
+
+        pattern = rep
+        # Check for different sized repeats.
+        for i in range(5, len(rep) // 2 + 1):
+            # If string is found to repeat it self, save the repeat.
+            if(not len(rep) % len(rep[:i]) and \
+            rep[:i] * (len(rep)//len(rep[:i])) == rep):
+                pattern = rep[:i]
+
+        return pattern
+
 
 class visualiseGC:
     """Calculation and visualisation of GC content and telomere position.
@@ -364,36 +414,6 @@ class visualiseGC:
         fig.update_yaxes(showgrid=False, title="Physical position (Megabases)")
         fig.write_html(f"{self.output}.html")
 
-
-def nuc_diff(seq1: str, seq2: str) -> int:
-    """Calculate number of different nucleotides between two sequences.
-
-    Attributes:
-    seq1 (str): Nucleotide sequence
-    seq2 (str): Nucleotide sequence
-
-    Returns:
-    nuc_diff (int): Number of different nucleotides. 
-    """
-    if len(seq1) != len(seq2):
-        return len(seq1)
-    else:
-        return sum(seq1[nuc] != seq2[nuc] for nuc in range(len(seq1)))
-
-def repeat_qc(rep: str, seq: str) -> float:
-    """Determine how well a repeat fits the repeating sequence.
-    
-    Attributes:
-        rep (str): Short repeating nucleotide sequence
-        seq (str): Full repeating nucleotide sequence
-    
-    Returns:
-        int: Quality score of repeat, higher is better.
-    """
-    distance = Levenshtein.distance(str(rep)*round(len(seq)/len(rep)), 
-                                    str(seq)) + 1
-
-    return len(seq)/(distance*len(rep))
 
 def read_fasta(fasta_file) -> dict:
     """Read content of fasta file and store data
