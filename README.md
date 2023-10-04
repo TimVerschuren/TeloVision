@@ -20,7 +20,7 @@ pip install .
 
 ## Usage
 
-TeloVision has 2 required inputs and 3 optional ones. An input and output file are required, while the k-mer size, minimum repeat length and sequence size can be altered if the user wishes so. If the optional inputs are not selected, default values will be used. 
+TeloVision has 2 required inputs and 5 optional ones. An input and output file are required, while the k-mer size, minimum repeat length, sequence size, gap-size and sorting parameters can be altered if the user wishes so. If the optional inputs are not selected, default values will be used. 
 ```
 usage: telovision [-h] -i INPUT -o OUTPUT [-k KMER_SIZE] [-r MIN_REPEAT_LENGTH] [-s SEQUENCE_SIZE] [-g GAP_SIZE] [--sorted]
 
